@@ -22,5 +22,4 @@ spec:
       allowPrivilegeEscalation: false
   volumes:
   - name: shared-data
-    hostPath:
-      path: /etc
+    emptyDir: {}

@@ -1,11 +1,10 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: K8sPSPHostFilesystem
+kind: k8sPSPEmptyDir
 metadata:
-  name: psp-host-filesystem
+  name: psp-empty-dir
 spec:
   match:
     kinds:
       - apiGroups: [""]
         kinds: ["Pod"]
-  parameters:
-    allowedHostPaths: []
+  parameters: {}

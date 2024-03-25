@@ -24,7 +24,19 @@ spec:
             `allowedHostPaths` field in a PodSecurityPolicy. For more information,
             see
             https://kubernetes.io/docs/concepts/policy/pod-security-policy/#volumes-and-file-systems
-          properties: {}
+          properties:
+            allowedHostPaths:
+              type: array
+              description: "An array of hostpath objects, representing paths and read/write configuration."
+              items:
+                type: object
+                properties:
+                  pathPrefix:
+                    type: string
+                    description: "The path prefix that the host volume must match."
+                  readOnly:
+                    type: boolean
+                    description: "when set to true, any container volumeMounts matching the pathPrefix must include `readOnly: true`."
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
@@ -32,58 +44,100 @@ spec:
 
         import data.lib.exclude_update.is_update
 
-        violation[{"msg": msg, "details": {"container": container_name}}] {
+        violation[{"msg": msg, "details": {}}] {
             # spec.volumes field is immutable.
             not is_update(input.review)
 
-            containers := input.review.object.spec.containers
-            container := containers[_]
-            has_empty_dir_volume(container)
-            container_name := container.name
-            msg := sprintf("EmptyDir volume is not allowed in container '%v' of pod: %v", [container_name, input.review.object.metadata.name])
+            volume := input_hostpath_volumes[_]
+            allowedPaths := get_allowed_paths(input)
+            input_hostpath_violation(allowedPaths, volume)
+            msg := sprintf("HostPath volume %v is not allowed, pod: %v. Allowed path: %v", [volume, input.review.object.metadata.name, allowedPaths])
         }
 
-        violation[{"msg": msg, "details": {"container": container_name}}] {
-            # spec.volumes field is immutable.
-            not is_update(input.review)
-
-            containers := input.review.object.spec.containers
-            container := containers[_]
-            has_host_path_volume(container)
-            container_name := container.name
-            msg := sprintf("HostPath volume is not allowed in container '%v' of pod: %v", [container_name, input.review.object.metadata.name])
+        input_hostpath_violation(allowedPaths, _) {
+            # An empty list means all host paths are blocked
+            allowedPaths == []
+        }
+        input_hostpath_violation(allowedPaths, volume) {
+            not input_hostpath_allowed(allowedPaths, volume)
         }
 
-        violation[{"msg": msg, "details": {"container": container_name}}] {
-            # spec.volumes field is immutable.
-            not is_update(input.review)
-
-            init_containers := input.review.object.spec.initContainers
-            container := init_containers[_]
-            has_empty_dir_volume(container)
-            container_name := container.name
-            msg := sprintf("EmptyDir volume is not allowed in init container '%v' of pod: %v", [container_name, input.review.object.metadata.name])
+        get_allowed_paths(arg) = out {
+            not arg.parameters
+            out = []
+        }
+        get_allowed_paths(arg) = out {
+            not arg.parameters.allowedHostPaths
+            out = []
+        }
+        get_allowed_paths(arg) = out {
+            out = arg.parameters.allowedHostPaths
         }
 
-        violation[{"msg": msg, "details": {"container": container_name}}] {
-            # spec.volumes field is immutable.
-            not is_update(input.review)
-
-            init_containers := input.review.object.spec.initContainers
-            container := init_containers[_]
-            has_host_path_volume(container)
-            container_name := container.name
-            msg := sprintf("HostPath volume is not allowed in init container '%v' of pod: %v", [container_name, input.review.object.metadata.name])
+        input_hostpath_allowed(allowedPaths, volume) {
+            allowedHostPath := allowedPaths[_]
+            path_matches(allowedHostPath.pathPrefix, volume.hostPath.path)
+            not allowedHostPath.readOnly == true
         }
 
-        has_empty_dir_volume(container) {
-            volume_type := [v.volumeType | v := container.volumeMounts[_]; v.volumeType == "emptyDir"]
-            count(volume_type) > 0
+        input_hostpath_allowed(allowedPaths, volume) {
+            allowedHostPath := allowedPaths[_]
+            path_matches(allowedHostPath.pathPrefix, volume.hostPath.path)
+            allowedHostPath.readOnly
+            not writeable_input_volume_mounts(volume.name)
         }
 
-        has_host_path_volume(container) {
-            volume_type := [v.volumeType | v := container.volumeMounts[_]; v.volumeType == "hostPath"]
-            count(volume_type) > 0
+        writeable_input_volume_mounts(volume_name) {
+            container := input_containers[_]
+            mount := container.volumeMounts[_]
+            mount.name == volume_name
+            not mount.readOnly
+        }
+
+        # This allows "/foo", "/foo/", "/foo/bar" etc., but
+        # disallows "/fool", "/etc/foo" etc.
+        path_matches(prefix, path) {
+            a := path_array(prefix)
+            b := path_array(path)
+            prefix_matches(a, b)
+        }
+        path_array(p) = out {
+            p != "/"
+            out := split(trim(p, "/"), "/")
+        }
+        # This handles the special case for "/", since
+        # split(trim("/", "/"), "/") == [""]
+        path_array("/") = []
+
+        prefix_matches(a, b) {
+            count(a) <= count(b)
+            not any_not_equal_upto(a, b, count(a))
+        }
+
+        any_not_equal_upto(a, b, n) {
+            a[i] != b[i]
+            i < n
+        }
+
+        input_hostpath_volumes[v] {
+            v := input.review.object.spec.volumes[_]
+            has_field(v, "hostPath")
+        }
+
+        # has_field returns whether an object has a field
+        has_field(object, field) = true {
+            object[field]
+        }
+        input_containers[c] {
+            c := input.review.object.spec.containers[_]
+        }
+
+        input_containers[c] {
+            c := input.review.object.spec.initContainers[_]
+        }
+
+        input_containers[c] {
+            c := input.review.object.spec.ephemeralContainers[_]
         }
       libs:
         - |

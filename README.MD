@@ -432,26 +432,9 @@ spec:
         value: "1024"
 ```
 
-12. **Block Usage of Host File System and EmptyDir**: Prevents access to the host file system and restricts usage of emptyDir volumes, enhancing security and preventing data leaks.
+12. **Block Usage of Host File System**: Prevents access to the host file system, enhancing security and preventing data leaks.
 
-> sampledisallowedemptydir.yaml
 
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: disallowed-pod
-spec:
-  containers:
-  - name: container1
-    image: nginx
-    volumeMounts:
-    - name: shared-data
-      mountPath: /data
-  volumes:
-  - name: shared-data
-    emptyDir: {}
-```
 > sampledisallowedhostpath.yaml
 
 ```
@@ -577,4 +560,25 @@ spec:
       privileged: true
 ```
 
-16. **Auto Update Allow Privilege Escalation to False**: This mutation policy will Automatically updates the `allowPrivilegeEscalation` field to `false` for enhanced security and to prevent privilege escalation attacks even if no field is declared
+16. **Block Usage of  EmptyDir**:  Restricts usage of emptyDir volumes, enhancing security and preventing data leaks.
+
+> sampledisallowedemptydir.yaml
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: disallowed-pod
+spec:
+  containers:
+  - name: container1
+    image: nginx
+    volumeMounts:
+    - name: shared-data
+      mountPath: /data
+  volumes:
+  - name: shared-data
+    emptyDir: {}
+```
+
+17. **Auto Update Allow Privilege Escalation to False**: This mutation policy will Automatically updates the `allowPrivilegeEscalation` field to `false` for enhanced security and to prevent privilege escalation attacks even if no field is declared
