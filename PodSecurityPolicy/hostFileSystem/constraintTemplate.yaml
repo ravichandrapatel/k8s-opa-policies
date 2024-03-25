@@ -1,0 +1,94 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8spsphostfilesystem
+  annotations:
+    metadata.gatekeeper.sh/title: "Host Filesystem"
+    metadata.gatekeeper.sh/version: 1.0.2
+    description: >-
+      Controls usage of the host filesystem. Corresponds to the
+      `allowedHostPaths` field in a PodSecurityPolicy. For more information,
+      see
+      https://kubernetes.io/docs/concepts/policy/pod-security-policy/#volumes-and-file-systems
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sPSPHostFilesystem
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          description: >-
+            Controls usage of the host filesystem. Corresponds to the
+            `allowedHostPaths` field in a PodSecurityPolicy. For more information,
+            see
+            https://kubernetes.io/docs/concepts/policy/pod-security-policy/#volumes-and-file-systems
+          properties: {}
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8spsphostfilesystem
+
+        import data.lib.exclude_update.is_update
+
+        violation[{"msg": msg, "details": {"container": container_name}}] {
+            # spec.volumes field is immutable.
+            not is_update(input.review)
+
+            containers := input.review.object.spec.containers
+            container := containers[_]
+            has_empty_dir_volume(container)
+            container_name := container.name
+            msg := sprintf("EmptyDir volume is not allowed in container '%v' of pod: %v", [container_name, input.review.object.metadata.name])
+        }
+
+        violation[{"msg": msg, "details": {"container": container_name}}] {
+            # spec.volumes field is immutable.
+            not is_update(input.review)
+
+            containers := input.review.object.spec.containers
+            container := containers[_]
+            has_host_path_volume(container)
+            container_name := container.name
+            msg := sprintf("HostPath volume is not allowed in container '%v' of pod: %v", [container_name, input.review.object.metadata.name])
+        }
+
+        violation[{"msg": msg, "details": {"container": container_name}}] {
+            # spec.volumes field is immutable.
+            not is_update(input.review)
+
+            init_containers := input.review.object.spec.initContainers
+            container := init_containers[_]
+            has_empty_dir_volume(container)
+            container_name := container.name
+            msg := sprintf("EmptyDir volume is not allowed in init container '%v' of pod: %v", [container_name, input.review.object.metadata.name])
+        }
+
+        violation[{"msg": msg, "details": {"container": container_name}}] {
+            # spec.volumes field is immutable.
+            not is_update(input.review)
+
+            init_containers := input.review.object.spec.initContainers
+            container := init_containers[_]
+            has_host_path_volume(container)
+            container_name := container.name
+            msg := sprintf("HostPath volume is not allowed in init container '%v' of pod: %v", [container_name, input.review.object.metadata.name])
+        }
+
+        has_empty_dir_volume(container) {
+            volume_type := [v.volumeType | v := container.volumeMounts[_]; v.volumeType == "emptyDir"]
+            count(volume_type) > 0
+        }
+
+        has_host_path_volume(container) {
+            volume_type := [v.volumeType | v := container.volumeMounts[_]; v.volumeType == "hostPath"]
+            count(volume_type) > 0
+        }
+      libs:
+        - |
+          package lib.exclude_update
+
+          is_update(review) {
+              review.operation == "UPDATE"
+          }

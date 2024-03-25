@@ -1,0 +1,21 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sStorageClass
+metadata:
+  name: storageclass
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["PersistentVolumeClaim"]
+      - apiGroups: [""]
+        kinds: ["PersistentVolume"]    
+      - apiGroups: ["apps"]
+        kinds: ["StatefulSet"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+      - apiGroups: [""]
+        kinds: ["PersistentVolume"]      
+  parameters:
+    includeStorageClassesInMessage: true
+    allowedStorageClasses:
+       - ebs
