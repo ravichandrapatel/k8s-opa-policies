@@ -6,16 +6,10 @@ spec:
   match:
     kinds:
       - apiGroups: [""]
-        kinds: ["PersistentVolumeClaim"]
-      - apiGroups: [""]
-        kinds: ["PersistentVolume"]    
+        kinds: ["PersistentVolumeClaim"]  
       - apiGroups: ["apps"]
         kinds: ["StatefulSet"]
-      - apiGroups: ["apps"]
-        kinds: ["Deployment"]
-      - apiGroups: [""]
-        kinds: ["PersistentVolume"]      
   parameters:
     includeStorageClassesInMessage: true
     allowedStorageClasses:
-       - ebs
+       - allowed-storage-class

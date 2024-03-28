@@ -1,43 +1,29 @@
 kind: Suite
 apiVersion: test.gatekeeper.sh/v1alpha1
 metadata:
-  name: allowedrepos
+  name: containerresources
 tests:
-- name: allowed-repos
-  template: template.yaml
-  constraint: samples/repo-must-be-openpolicyagent/constraint.yaml
-  cases:
-  - name: example-allowed
-    object: samples/repo-must-be-openpolicyagent/example_allowed.yaml
-    assertions:
-    - violations: no
-  - name: container-disallowed
-    object: samples/repo-must-be-openpolicyagent/example_disallowed_container.yaml
-    assertions:
-    - violations: yes
-      message: container
-  - name: initcontainer-disallowed
-    object: samples/repo-must-be-openpolicyagent/example_disallowed_initcontainer.yaml
-    assertions:
-    - violations: 1
-      message: initContainer
-    - violations: 0
-      message: container
-  - name: both-disallowed
-    object: samples/repo-must-be-openpolicyagent/example_disallowed_both.yaml
-    assertions:
-    - violations: 2
-    - message: initContainer
-      violations: 1
-    - message: container
-      violations: 1
-  - name: all-disallowed
-    object: samples/repo-must-be-openpolicyagent/disallowed_all.yaml
-    assertions:
-    - violations: 3
-    - message: initContainer
-      violations: 1
-    - message: container
-      violations: 1
-    - message: ephemeralContainer
-      violations: 1
+  - name: container-limits-and-requests
+    template: contraintTemplate.yaml
+    constraint: constraint.yaml
+    cases:
+      - name: limits-and-requests-defined-allowed
+        object: example/limits-and-requests-defined-allowed.yaml
+        assertions:
+          - violations: no
+      - name: only-requests-defined-disallowed
+        object: example/only-requests-defined-disallowed.yaml
+        assertions:
+          - violations: yes
+      - name: only-cpu-requests-and-memory-limits-defined-disallowed
+        object: example/only-cpu-requests-and-memory-limits-defined-disallowed.yaml
+        assertions:
+          - violations: yes
+      - name: only-memory-limits-defined-disallowed
+        object: example/only-memory-limits-defined-disallowed.yaml
+        assertions:
+          - violations: yes
+      - name: no-request-and-limits-disallowed
+        object: example/no-request-and-limits-disallowed.yaml
+        assertions:
+          - violations: yes

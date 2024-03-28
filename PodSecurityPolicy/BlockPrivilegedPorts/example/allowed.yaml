@@ -1,10 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: disallowed-pod
+  name: nginx-host-networking-ports-disallowed
+  labels:
+    app: nginx-host-networking-ports
 spec:
+  hostNetwork: true
   containers:
   - name: nginx
-    image: nginx:latest
+    image: nginx
     ports:
-    - containerPort: 80
+    - containerPort: 9001
+      hostPort: 9001

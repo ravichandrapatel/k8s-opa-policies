@@ -1,43 +1,25 @@
 kind: Suite
 apiVersion: test.gatekeeper.sh/v1alpha1
 metadata:
-  name: allowedrepos
+  name: block-wildcard-ingress
 tests:
-- name: allowed-repos
-  template: template.yaml
-  constraint: samples/repo-must-be-openpolicyagent/constraint.yaml
+- name: block-wildcard-ingress
+  template: contraintTemplate.yaml
+  constraint: constraint.yaml
   cases:
   - name: example-allowed
-    object: samples/repo-must-be-openpolicyagent/example_allowed.yaml
+    object: example/example_allowed.yaml
     assertions:
-    - violations: no
-  - name: container-disallowed
-    object: samples/repo-must-be-openpolicyagent/example_disallowed_container.yaml
-    assertions:
-    - violations: yes
-      message: container
-  - name: initcontainer-disallowed
-    object: samples/repo-must-be-openpolicyagent/example_disallowed_initcontainer.yaml
+    - violations: 0
+  - name: blank-host
+    object: example/disallowed/blank_host.yaml
     assertions:
     - violations: 1
-      message: initContainer
-    - violations: 0
-      message: container
-  - name: both-disallowed
-    object: samples/repo-must-be-openpolicyagent/example_disallowed_both.yaml
+  - name: host-omitted
+    object: example/disallowed/host_omitted.yaml
     assertions:
-    - violations: 2
-    - message: initContainer
-      violations: 1
-    - message: container
-      violations: 1
-  - name: all-disallowed
-    object: samples/repo-must-be-openpolicyagent/disallowed_all.yaml
+    - violations: 1
+  - name: wildcard-host
+    object: example/disallowed/wildcard_host.yaml
     assertions:
-    - violations: 3
-    - message: initContainer
-      violations: 1
-    - message: container
-      violations: 1
-    - message: ephemeralContainer
-      violations: 1
+    - violations: 1

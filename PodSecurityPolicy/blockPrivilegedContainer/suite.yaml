@@ -1,43 +1,25 @@
 kind: Suite
 apiVersion: test.gatekeeper.sh/v1alpha1
 metadata:
-  name: allowedrepos
+  name: privileged-containers
 tests:
-- name: allowed-repos
-  template: template.yaml
-  constraint: samples/repo-must-be-openpolicyagent/constraint.yaml
+- name: privileged-containers-disallowed
+  template: constraintTemplate.yaml
+  constraint: constraint.yaml
   cases:
-  - name: example-allowed
-    object: samples/repo-must-be-openpolicyagent/example_allowed.yaml
-    assertions:
-    - violations: no
-  - name: container-disallowed
-    object: samples/repo-must-be-openpolicyagent/example_disallowed_container.yaml
+  - name: example-disallowed
+    object: example/example_disallowed.yaml
     assertions:
     - violations: yes
-      message: container
-  - name: initcontainer-disallowed
-    object: samples/repo-must-be-openpolicyagent/example_disallowed_initcontainer.yaml
+  - name: example-allowed
+    object: example/example_allowed.yaml
     assertions:
-    - violations: 1
-      message: initContainer
-    - violations: 0
-      message: container
-  - name: both-disallowed
-    object: samples/repo-must-be-openpolicyagent/example_disallowed_both.yaml
+    - violations: no
+  - name: disallowed-ephemeral
+    object: example/disallowed_ephemeral.yaml
     assertions:
-    - violations: 2
-    - message: initContainer
-      violations: 1
-    - message: container
-      violations: 1
-  - name: all-disallowed
-    object: samples/repo-must-be-openpolicyagent/disallowed_all.yaml
+    - violations: yes
+  - name: update
+    object: example/update.yaml
     assertions:
-    - violations: 3
-    - message: initContainer
-      violations: 1
-    - message: container
-      violations: 1
-    - message: ephemeralContainer
-      violations: 1
+    - violations: no
