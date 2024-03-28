@@ -7,6 +7,19 @@ This repository contains a set of baseline policies for Gatekeeper to ensure adh
 1. Gatekeeper
 2. kubectl
 
+
+## Automated policy testing
+
+The suite.yaml files define test cases for each ConstraintTemplate in the library. Changes to gatekeeper-library ConstraintTemplates may be tested with the gator CLI:
+
+```
+gatekeeper-library$ gator verify ./...
+
+```
+
+The gator CLI can be downloaded from the Gatekeeper releases page or gator dockerfile is available in the repo you can build and test it
+
+
 ## List of Policies
 
 1. **Allowed Usage of Whitelisted Repositories**: Permits only specified container image repositories, ensuring the use of trusted images for enhanced security and compliance.
