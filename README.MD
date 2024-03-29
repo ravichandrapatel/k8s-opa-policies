@@ -1,597 +1,121 @@
-# OPA GATEKEEPER POLICIES
-
-This repository contains a set of baseline policies for Gatekeeper to ensure adherence to best security practices in Kubernetes YAML files.
-
-## Prerequisites
-
-1. Gatekeeper
-2. kubectl
-
-
-## Automated policy testing
-
-The suite.yaml files define test cases for each ConstraintTemplate in the library. Changes to gatekeeper-library ConstraintTemplates may be tested with the gator CLI:
-
-```
-gatekeeper-library$ gator verify ./...
-
-```
-
-The gator CLI can be downloaded from the Gatekeeper releases page or gator dockerfile is available in the repo you can build and test it
-
-
-## List of Policies
-
-1. **Allowed Usage of Whitelisted Repositories**: Permits only specified container image repositories, ensuring the use of trusted images for enhanced security and compliance.
-
-### Allowed repository list:
-1. opa
-2. docker
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: opa-allowed
-spec:
-  containers:
-    - name: opa
-      image: openpolicyagent/opa:0.9.2
-      args:
-        - "run"
-        - "--server"
-        - "--addr=localhost:8080"
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-disallowed
-spec:
-  containers:
-    - name: nginx
-      image: nginx
-```
-2. **Block Usage of Latest Tag**: Restricts or blocks the usage of the "latest" tag for container images to ensure version control and promote predictable deployments.
-
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: opa-allowed
-spec:
-  containers:
-    - name: opa
-      image: openpolicyagent/opa:0.9.2
-      args:
-        - "run"
-        - "--server"
-        - "--addr=localhost:8080"
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: opa-exempt-allowed
-spec:
-  containers:
-    - name: opa-exp
-      image: openpolicyagent/opa-exp:latest
-      args:
-        - "run"
-        - "--server"
-        - "--addr=localhost:8080"
-```
-
-3. **Allowed Usage of Whitelisted Storage Classes**: Limits storage class usage to approved ones, maintaining consistency and preventing data loss or breaches.
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: ok
-spec:
-  accessModes:
-    - ReadWriteOnce
-  volumeMode: Filesystem
-  resources:
-    requests:
-      storage: 8Gi
-  storageClassName: somestorageclass
-
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: nostorageclass
-spec:
-  accessModes:
-    - ReadWriteOnce
-  volumeMode: Filesystem
-  resources:
-    requests:
-      storage: 8Gi
-```
-
-4. **Block Containers with No Resources Limits/Requests**: Enforces setting resource limits and requests to prevent contention and ensure predictable performance.
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: opa-allowed
-  labels:
-    owner: me.agilebank.demo
-spec:
-  containers:
-    - name: opa
-      image: openpolicyagent/opa:0.9.2
-      args:
-        - "run"
-        - "--server"
-        - "--addr=localhost:8080"
-      resources:
-        limits:
-          cpu: "100m"
-          memory: "1Gi"
-        requests:
-          cpu: "100m"
-          memory: "1Gi"
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: opa-allowed
-  labels:
-    owner: me.agilebank.demo
-spec:
-  containers:
-    - name: opa
-      image: openpolicyagent/opa:0.9.2
-      args:
-        - "run"
-        - "--server"
-        - "--addr=localhost:8080"
-```
-
-5. **Block Usage of NodePort**: Prevents exposing services via NodePort, reducing the attack surface and promoting a more secure network configuration.
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: my-service-allowed
-spec:
-  type: ClusterIP
-  ports:
-    - port: 80
-      targetPort: 80
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: my-service-disallowed
-spec:
-  type: NodePort
-  ports:
-    - port: 80
-      targetPort: 80
-      nodePort: 30007
-```
-
-6. **Block Usage of Service Type LoadBalancer**: Disallows the use of LoadBalancer services, minimizing costs and security risks associated with external access.
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: my-service-allowed
-spec:
-  type: ClusterIP
-  ports:
-    - port: 80
-      targetPort: 80
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: my-service-disallowed
-spec:
-  type: LoadBalancer
-  ports:
-    - port: 80
-      targetPort: 80
-      nodePort: 30007
-```
-
-7. **Block Usage of Wildcard Ingress Hostname**: Restricts wildcard usage in Ingress hostnames, enhancing security by preventing potential subdomain takeovers and misconfigurations.
-
-> sampleallowed.yaml
-
-```
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: non-wildcard-ingress
-spec:
-  rules:
-  - host: 'myservice.example.com'
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: example
-            port:
-              number: 80
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: wildcard-ingress
-spec:
-  rules:
-  - host: ''
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: example
-            port:
-              number: 80
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: wildcard-ingress
-spec:
-  rules:
-  # Omitted host field counts as a wildcard too
-  - http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: example
-            port:
-              number: 80
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: wildcard-ingress
-spec:
-  rules:
-  - host: '*.example.com'
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: example
-            port:
-              number: 80
-  # Extra test to ensure the rule still detects invalid hosts in files containing valid hosts
-  - host: 'valid.example.com'
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: example
-            port:
-              number: 80
-```
-
-8. **Block Automount Service Account Token for Pod**: Disables automatic mounting of service account tokens, reducing the risk of unauthorized access to sensitive Kubernetes resources.
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-automountserviceaccounttoken-allowed
-  labels:
-    app: nginx-not-automountserviceaccounttoken
-spec:
-  automountServiceAccountToken: false
-  containers:
-  - name: nginx
-    image: nginx
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-automountserviceaccounttoken-disallowed
-  labels:
-    app: nginx-automountserviceaccounttoken
-spec:
-  automountServiceAccountToken: true
-  containers:
-  - name: nginx
-    image: nginx
-```
-
-9. **Allow Usage of Whitelisted Capabilities**: Specifies permitted Linux capabilities, ensuring only necessary privileges are granted to containers, thus minimizing attack vectors.
-
-> sampleallowed.yaml
-
-```
-```
-> sampledisallowed.yaml
-
-```
-```
-
-10. **Block Allow Privilege Escalation is True**: Prevents containers from running with privilege escalation, reducing the likelihood of attacks and maintaining cluster integrity.
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-privilege-escalation-allowed
-  labels:
-    app: nginx-privilege-escalation
-spec:
-  containers:
-  - name: nginx
-    image: nginx
-    securityContext:
-      allowPrivilegeEscalation: false
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-privilege-escalation-disallowed
-  labels:
-    app: nginx-privilege-escalation
-spec:
-  containers:
-  - name: nginx
-    image: nginx
-    securityContext:
-      allowPrivilegeEscalation: true
-```
-
-11. **Block Usage of Forbidden Sysctls**: Prohibits the use of specific sysctl settings to mitigate security vulnerabilities and enforce compliance with organizational policies.
-
-### Blocked sysctls:
-
-1. kernel
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-forbidden-sysctls-disallowed
-  labels:
-    app: nginx-forbidden-sysctls
-spec:
-  containers:
-    - name: nginx
-      image: nginx
-  securityContext:
-    sysctls:
-      - name: net.core.somaxconn
-        value: "1024"
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-forbidden-sysctls-disallowed
-  labels:
-    app: nginx-forbidden-sysctls
-spec:
-  containers:
-    - name: nginx
-      image: nginx
-  securityContext:
-    sysctls:
-      - name: kernel.msgmax
-        value: "65536"
-      - name: net.core.somaxconn
-        value: "1024"
-```
-
-12. **Block Usage of Host File System**: Prevents access to the host file system, enhancing security and preventing data leaks.
-
-
-> sampledisallowedhostpath.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: disallowed-pod
-spec:
-  containers:
-  - name: container1
-    image: nginx
-    volumeMounts:
-    - name: shared-data
-      mountPath: /data
-  volumes:
-  - name: shared-data
-    hostPath:
-      path: /etc
-```
-
-13. **Block Usage of Host Namespace PID/PIC**: Disallows the use of host PID and IPC namespaces to prevent potential interference with the host system, enhancing isolation and security.
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-host-namespace-allowed
-  labels:
-    app: nginx-host-namespace
-spec:
-  hostPID: false
-  hostIPC: false
-  containers:
-  - name: nginx
-    image: nginx
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-host-namespace-disallowed
-  labels:
-    app: nginx-host-namespace
-spec:
-  hostPID: true
-  hostIPC: true
-  containers:
-  - name: nginx
-    image: nginx
-```
-
-14. **Block Usage of Privileged Ports**: Prevents containers from binding to privileged ports, reducing the risk of unauthorized network access and maintaining cluster security.
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: disallowed-pod
-spec:
-  containers:
-  - name: nginx
-    image: nginx:latest
-    ports:
-    - containerPort: 80
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-host-networking-ports-disallowed
-  labels:
-    app: nginx-host-networking-ports
-spec:
-  hostNetwork: true
-  containers:
-  - name: nginx
-    image: nginx
-    ports:
-    - containerPort: 9001
-      hostPort: 9001
-```
-
-15. **Block Usage of Privileged Containers**: Prohibits the use of privileged containers to prevent elevated privileges, thereby minimizing the attack surface and enhancing security.
-
-> sampleallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-privileged-allowed
-  labels:
-    app: nginx-privileged
-spec:
-  containers:
-  - name: nginx
-    image: nginx
-    securityContext:
-      privileged: false
-```
-> sampledisallowed.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-privileged-disallowed
-  labels:
-    app: nginx-privileged
-spec:
-  containers:
-  - name: nginx
-    image: nginx
-    securityContext:
-      privileged: true
-```
-
-16. **Block Usage of  EmptyDir**:  Restricts usage of emptyDir volumes, enhancing security and preventing data leaks.
-
-> sampledisallowedemptydir.yaml
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: disallowed-pod
-spec:
-  containers:
-  - name: container1
-    image: nginx
-    volumeMounts:
-    - name: shared-data
-      mountPath: /data
-  volumes:
-  - name: shared-data
-    emptyDir: {}
-```
-
-17. **Auto Update Allow Privilege Escalation to False**: This mutation policy will Automatically updates the `allowPrivilegeEscalation` field to `false` for enhanced security and to prevent privilege escalation attacks even if no field is declared
+# Gatekeeper Policy Library
+
+Welcome to the Gatekeeper Policy Library! This repository contains a set of pre-defined policies designed to enhance security and enforce best practices within Kubernetes clusters.
+
+## Policy Organization
+
+The policies in this library are organized into three main categories:
+
+1. **General Policies**: These policies focus on setting cluster-wide rules and restrictions to ensure consistent security measures across all resources.
+
+2. **Pod Security Policies**: These policies are specifically tailored to define and enforce security standards for pods, ensuring that each pod's security context meets the desired configuration.
+
+3. **Test Cases**: The test cases directory contains sample configurations and test suites to validate the effectiveness of the policies.
+
+
+## Contents of Each Policy Subdirectory
+
+Each policy subdirectory contains the following components:
+
+- **ConstraintTemplate.yaml**: This file defines the structure and parameters of a policy, serving as a template for creating specific constraints.
+
+- **Constraint**: An instance of a policy defined by a ConstraintTemplate. It specifies the parameters and values necessary to enforce the policy on Kubernetes objects.
+
+## Contents of the Test Cases Subdirectory
+
+The test cases subdirectory includes the following:
+
+- **Example YAMLs**: These files demonstrate how to use the policies with sample YAML configurations, making it easier to understand how the policies work.
+
+- **suit.yaml**: This file contains test cases used by Gator, a tool for validating policies, to ensure that the policies are correctly implemented and functioning as expected.
+
+## General Policies
+
+1. **Allowed Repositories**: Ensures that only approved container image repositories are used, reducing the risk of deploying images from untrusted sources.
+
+2. **Allowed Storage Class**: Defines the allowed storage classes for Persistent Volume Claims (PVCs) and Storage Solutions (SS), helping manage storage resources efficiently.
+
+3. **Block Container With No Resource**: Enforces the specification of resource requests and limits for containers to optimize resource utilization and stability.
+
+4. **Block Latest Tag**: Prevents the use of the latest tag for container images to ensure consistent and predictable deployments.
+
+5. **Block NodePort**: Disallows the use of NodePort services to minimize the exposure of services to external networks.
+
+6. **Block Services With Type LoadBalancer**: Blocks services with type LoadBalancer to reduce the attack surface and limit external access to services.
+
+7. **Block Wildcard Ingress**: Disallows wildcard hosts in Ingress configurations to prevent unintended exposure and potential security vulnerabilities.
+
+8. **Disallow Automount Service Account Token for Pod**: Prevents automatic mounting of service account tokens in Pods to reduce the risk of token theft or misuse.
+
+## Pod Security Policy Policies
+
+1. **Allowed Capabilities**: Specifies the allowed capabilities for containers, restricting potentially dangerous operations and enhancing security.
+
+2. **Allow Read Only Root Filesystem**: Controls whether containers are allowed to have a read-only root filesystem to mitigate the impact of filesystem attacks.
+
+3. **Allow Seccomp**: Determines whether containers are allowed to use Seccomp profiles, which restrict syscall access for additional security.
+
+4. **Block Allow Privilege Escalation**: Prevents containers from allowing privilege escalation to mitigate the risk of unauthorized access to host resources.
+
+5. **Block Empty Dir**: Prohibits the use of emptyDir volumes in containers to reduce the risk of data loss or unauthorized access.
+
+6. **Block Forbidden Sysctls**: Blocks the use of forbidden sysctls in containers to prevent potentially unsafe kernel modifications.
+
+7. **Block Host Filesystem**: Prevents containers from using the host filesystem to reduce the risk of unauthorized access.
+
+8. **Block Host Namespace**: Blocks containers from accessing the host namespace to enhance isolation and security.
+
+9. **Block Privileged Container**: Prevents containers from running in privileged mode to limit their privileges and reduce the attack surface.
+
+10. **Block Privileged Ports**: Prevents non-privileged containers from binding to system ports to enhance security.
+
+11. **Block Proc Mount**: Restricts access to system information through the proc filesystem to enhance security.
+
+12. **SELinux**: Specifies SELinux configurations for containers to enforce mandatory access controls and enhance security.
+
+Feel free to explore each policy and use them to ensure the security and stability of your Kubernetes environment!
+
+## Testing with Gator
+
+This section describes how to use Gator, a tool specifically designed for validating Gatekeeper policies, to test the effectiveness of the policies within this library.
+
+### Prerequisites
+
+Before testing with Gator, ensure the following prerequisites are met:
+
+- **Kubernetes Cluster with Gatekeeper**: You should have a Kubernetes cluster set up with Gatekeeper installed and properly configured.
+
+- **Installation of Gator CLI**: Install the gator CLI tool on your local machine. You can find installation instructions on the Gatekeeper project website: [Gator Installation Instructions](https://open-policy-agent.github.io/gatekeeper/website/docs/)
+
+### Testing Workflow
+
+Follow these steps to test the policies using Gator:
+
+1. **Choose a Policy**: Select the policy you want to test from the available directories within the repository.
+
+2. **Review Test Suite (suite.yaml)**: Each policy directory likely contains a suite.yaml file. This file defines a test suite using Gator to validate the policy's functionality. Review this file to understand the test cases that will be executed.
+
+3. **Run the Test Suite**: Navigate to the directory containing the policy you want to test and execute the following command to run the test suite defined in suite.yaml:
+
+    ```bash
+    gator test suite.yaml
+    ```
+
+    **Note**: Use this command with caution as it instructs Gator to execute the test cases defined in the suite.yaml file.
+
+4. **Interpret the Results**: Gator will generate test results indicating whether each test case passed or failed. Passing test cases demonstrate that the policy functions as intended. Failing test cases might indicate issues with the policy configuration or unexpected behavior.
+
+5. **Analyze Failures**: If any test cases fail, carefully review the output from Gator and the corresponding policy files to identify the root cause of the failure. This might involve debugging the policy configuration or adjusting the test cases to accurately reflect the intended behavior.
+
+### Additional Notes
+
+- **Test Cases Directory**: The suite.yaml file might contain references to other YAML files defining specific test case scenarios. These files might be located within the same directory as the policy or in a separate test cases directory within the repository.
+
+- **Utilizing gator explain**: You can leverage the `gator explain` command to gain more detailed information about specific policies and their expected behavior. Refer to the Gator documentation for details on this command and other functionalities.
+
+## Testing Policies with Test Cases
+
+To test the policies using the provided test cases, navigate to the testcases directory within the repository. Each policy's test cases are organized into separate directories. Follow the same testing workflow outlined above, but instead of navigating to the policy directory, navigate to the corresponding test cases directory and execute the `gator test` command with the appropriate suite.yaml file.
+
+By incorporating this testing section into your README, you provide a valuable guide for users to validate the functionality of the policies within your Gatekeeper policy library. This empowers users to confidently deploy and rely on these policies to enhance the security posture of their Kubernetes clusters.
+
