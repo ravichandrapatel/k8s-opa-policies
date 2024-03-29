@@ -98,7 +98,7 @@ Follow these steps to test the policies using Gator:
 3. **Run the Test Suite**: Navigate to the directory containing the policy you want to test and execute the following command to run the test suite defined in suite.yaml:
 
     ```bash
-    gator test suite.yaml
+    gator verify TestCases/...
     ```
 
     **Note**: Use this command with caution as it instructs Gator to execute the test cases defined in the suite.yaml file.
