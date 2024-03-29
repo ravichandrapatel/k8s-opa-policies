@@ -1,0 +1,15 @@
+kind: Suite
+apiVersion: test.gatekeeper.sh/v1alpha1
+metadata:
+  name: blockemptydir
+tests:
+  - name: blockemptydir
+    template: ../../../PodSecurityPolicy/blockemptydir/constraintTemplate.yaml
+    constraint: ../../../PodSecurityPolicy/blockemptydir/constraint.yaml
+    cases:
+    - name: all-disallowed
+      object: example/disallowedemptydir.yaml
+      assertions:
+      - violations: 1
+      - message: volume
+        violations: 1

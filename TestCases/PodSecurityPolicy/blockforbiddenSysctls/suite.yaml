@@ -1,0 +1,21 @@
+kind: Suite
+apiVersion: test.gatekeeper.sh/v1alpha1
+metadata:
+  name: forbidden-sysctls
+tests:
+  - name: forbidden-sysctls
+    template: ../../../PodSecurityPolicy/blockforbiddenSysctls/constraintTemplate.yaml
+    constraint: ../../../PodSecurityPolicy/blockforbiddenSysctls/constraint.yaml
+    cases:
+      - name: example-disallowed
+        object: example/example_disallowed.yaml
+        assertions:
+          - violations: yes
+      - name: example-allowed
+        object: example/example_allowed.yaml
+        assertions:
+          - violations: no
+      - name: update
+        object: example/update.yaml
+        assertions:
+          - violations: no

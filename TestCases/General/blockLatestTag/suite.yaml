@@ -1,0 +1,33 @@
+kind: Suite
+apiVersion: test.gatekeeper.sh/v1alpha1
+metadata:
+  name: disallowedtags
+tests:
+  - name: disallowed-tags
+    template: ../../../General/blockLatestTag/constraintTemplate.yaml
+    constraint: ../../../General/blockLatestTag/constraint.yaml
+    cases:
+    - name: allowed
+      object: example/example_allowed.yaml
+      assertions:
+      - violations: no
+    - name: exempt-images-with-disallowed-tags
+      object: example/example_exempt_image_w_disallowed_tag.yaml
+      assertions:
+      - violations: no
+    - name: no-tag
+      object: example/example_no_tag.yaml
+      assertions:
+      - violations: yes
+    - name: single-disallowed-tag
+      object: example/example_disallowed_tag.yaml
+      assertions:
+      - violations: yes
+    - name: single-disallowed-tag-ephemeral
+      object: example/disallowed_tag_ephemeral.yaml
+      assertions:
+      - violations: yes
+    - name: some-disallow-tags
+      object: example/example_some_disallowed_tags.yaml
+      assertions:
+      - violations: yes

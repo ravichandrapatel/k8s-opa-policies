@@ -4,8 +4,8 @@ metadata:
   name: containerresources
 tests:
   - name: container-limits-and-requests
-    template: constraintTemplate.yaml
-    constraint: constraint.yaml
+    template: ../../../General/blockcontainerWithNoResource/constraintTemplate.yaml
+    constraint: ../../../General/blockcontainerWithNoResource/constraint.yaml
     cases:
       - name: limits-and-requests-defined-allowed
         object: example/limits-and-requests-defined-allowed.yaml

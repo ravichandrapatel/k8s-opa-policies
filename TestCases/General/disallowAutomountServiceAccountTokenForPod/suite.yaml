@@ -4,8 +4,8 @@ metadata:
   name: automount-serviceaccount-token
 tests:
   - name: automount-serviceaccount-token
-    template: constraintTemplate.yaml
-    constraint: constraint.yaml
+    template: ../../../General/disallowAutomountServiceAccountTokenForPod/constraintTemplate.yaml
+    constraint: ../../../General/disallowAutomountServiceAccountTokenForPod/constraint.yaml
     cases:
       - name: example-allowed
         object: example/allowed.yaml

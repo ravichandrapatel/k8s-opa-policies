@@ -1,0 +1,43 @@
+kind: Suite
+apiVersion: test.gatekeeper.sh/v1alpha1
+metadata:
+  name: allowedrepos
+tests:
+  - name: allowed-repos
+    template: ../../../General/allowedRepositories/constraintTemplate.yaml
+    constraint: ../../../General/allowedRepositories/constraint.yaml
+    cases:
+    - name: example-allowed
+      object: example/allowed.yaml
+      assertions:
+      - violations: no
+    - name: container-disallowed
+      object: example/disallowed_container.yaml
+      assertions:
+      - violations: yes
+        message: container
+    - name: initcontainer-disallowed
+      object: example/disallowed_initcontainer.yaml
+      assertions:
+      - violations: 1
+        message: initContainer
+      - violations: 0
+        message: container
+    - name: both-disallowed
+      object: example/disallowed_both.yaml
+      assertions:
+      - violations: 2
+      - message: initContainer
+        violations: 1
+      - message: container
+        violations: 1
+    - name: all-disallowed
+      object: example/disallowed_all.yaml
+      assertions:
+      - violations: 3
+      - message: initContainer
+        violations: 1
+      - message: container
+        violations: 1
+      - message: ephemeralContainer
+        violations: 1

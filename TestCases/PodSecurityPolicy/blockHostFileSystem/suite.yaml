@@ -1,11 +1,11 @@
 kind: Suite
 apiVersion: test.gatekeeper.sh/v1alpha1
 metadata:
-  name: forbidden-sysctls
+  name: host-filesystem
 tests:
-  - name: forbidden-sysctls
-    template: constraintTemplate.yaml
-    constraint: constraint.yaml
+  - name: host-filesystem
+    template: ../../../PodSecurityPolicy/blockHostFileSystem/constraintTemplate.yaml
+    constraint: ../../../PodSecurityPolicy/blockHostFileSystem/constraint.yaml
     cases:
       - name: example-disallowed
         object: example/example_disallowed.yaml
@@ -15,6 +15,10 @@ tests:
         object: example/example_allowed.yaml
         assertions:
           - violations: no
+      - name: disallowed-ephemeral
+        object: example/disallowed_ephemeral.yaml
+        assertions:
+          - violations: yes
       - name: update
         object: example/update.yaml
         assertions:

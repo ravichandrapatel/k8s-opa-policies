@@ -1,0 +1,18 @@
+kind: Suite
+apiVersion: test.gatekeeper.sh/v1alpha1
+metadata:
+  name: allowedrepos
+tests:
+  - name: allowed-repos
+    template: ../../../PodSecurityPolicy/blockPrivilegedPorts/constraintTemplate.yaml
+    constraint: ../../../PodSecurityPolicy/blockPrivilegedPorts/constraint.yaml
+    cases:
+    - name: example-allowed
+      object: example/allowed.yaml
+      assertions:
+      - violations: no
+    - name: container-disallowed
+      object: example/disallowed.yaml
+      assertions:
+      - violations: yes
+        message: container

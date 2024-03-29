@@ -4,8 +4,8 @@ metadata:
   name: capabilities
 tests:
   - name: capabilities
-    template: constraintTemplate.yaml
-    constraint: constraint.yaml
+    template: ../../../PodSecurityPolicy/allowedCapabilities/constraintTemplate.yaml
+    constraint: ../../../PodSecurityPolicy/allowedCapabilities/constraint.yaml
     cases:
       - name: example-disallowed
         object: example/example_disallowed.yaml

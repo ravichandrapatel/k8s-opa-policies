@@ -4,8 +4,8 @@ metadata:
   name: storageclass
 tests:
 - name: storageclass
-  template: constraintTemplate.yaml
-  constraint: constraint.yaml
+  template: ../../../General/allowedstorageClass/constraintTemplate.yaml
+  constraint: ../../../General/allowedstorageClass/constraint.yaml
   cases:
   - name: example-allowed-pvc
     object: example/allowed_pvc.yaml

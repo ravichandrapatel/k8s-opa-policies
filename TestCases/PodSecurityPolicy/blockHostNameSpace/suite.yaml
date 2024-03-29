@@ -1,22 +1,18 @@
 kind: Suite
 apiVersion: test.gatekeeper.sh/v1alpha1
 metadata:
-  name: host-filesystem
+  name: host-namespaces
 tests:
-  - name: host-filesystem
-    template: constraintTemplate.yaml
-    constraint: constraint.yaml
+  - name: host-namespace
+    template: ../../../PodSecurityPolicy/blockHostNameSpace/constraintTemplate.yaml
+    constraint: ../../../PodSecurityPolicy/blockHostNameSpace/constraint.yaml
     cases:
-      - name: example-disallowed
-        object: example/example_disallowed.yaml
-        assertions:
-          - violations: yes
       - name: example-allowed
         object: example/example_allowed.yaml
         assertions:
           - violations: no
-      - name: disallowed-ephemeral
-        object: example/disallowed_ephemeral.yaml
+      - name: example-disallowed
+        object: example/example_disallowed.yaml
         assertions:
           - violations: yes
       - name: update
