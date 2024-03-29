@@ -4,7 +4,7 @@ metadata:
   name: block-wildcard-ingress
 tests:
 - name: block-wildcard-ingress
-  template: contraintTemplate.yaml
+  template: constraintTemplate.yaml
   constraint: constraint.yaml
   cases:
   - name: example-allowed

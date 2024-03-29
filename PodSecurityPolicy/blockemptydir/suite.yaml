@@ -11,5 +11,5 @@ tests:
     object: example/disallowedemptydir.yaml
     assertions:
     - violations: 1
-    - message: container
+    - message: volume
       violations: 1

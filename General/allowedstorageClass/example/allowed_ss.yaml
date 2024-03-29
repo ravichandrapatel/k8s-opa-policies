@@ -24,7 +24,7 @@ spec:
       name: data
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: "somestorageclass"
+      storageClassName: "allowed-storage-class"
       resources:
         requests:
           storage: 1Gi

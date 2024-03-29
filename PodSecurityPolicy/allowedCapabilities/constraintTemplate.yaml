@@ -6,15 +6,12 @@ metadata:
     metadata.gatekeeper.sh/title: "Capabilities"
     metadata.gatekeeper.sh/version: 1.0.1
     description: >-
-      Controls Linux capabilities on containers. Corresponds to the
-      `allowedCapabilities` and `requiredDropCapabilities` fields in a
-      PodSecurityPolicy. For more information, see
-      https://kubernetes.io/docs/concepts/policy/pod-security-policy/#capabilities
+      Controls Linux capabilities on containers. Corresponds to the `allowedCapabilities` and `requiredDropCapabilities` fields in a PodSecurityPolicy. For more information, see https://kubernetes.io/docs/concepts/policy/pod-security-policy/#capabilities
 spec:
   crd:
     spec:
       names:
-        kind: K8sPSPCapabilities
+        kind: K8SPSPCapabilities
       validation:
         # Schema for the `parameters` field
         openAPIV3Schema:
@@ -29,7 +26,6 @@ spec:
               description: >-
                 Any container that uses an image that matches an entry in this list will be excluded
                 from enforcement. Prefix-matching can be signified with `*`. For example: `my-image-*`.
-
                 It is recommended that users use the fully-qualified Docker image name (e.g. start with a domain name)
                 in order to avoid unexpectedly exempting images from an untrusted repository.
               type: array
@@ -48,7 +44,7 @@ spec:
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
-        package capabilities
+        package k8spspcapabilities
 
         import data.lib.exclude_update.is_update
         import data.lib.exempt_container.is_exempt
@@ -71,8 +67,6 @@ spec:
           msg := sprintf("container <%v> is not dropping all required capabilities. Container must drop all of %v or \"ALL\"", [container.name, input.parameters.requiredDropCapabilities])
         }
 
-
-
         violation[{"msg": msg}] {
           not is_update(input.review)
           container := input.review.object.spec.initContainers[_]
@@ -88,8 +82,6 @@ spec:
           missing_drop_capabilities(container)
           msg := sprintf("init container <%v> is not dropping all required capabilities. Container must drop all of %v or \"ALL\"", [container.name, input.parameters.requiredDropCapabilities])
         }
-
-
 
         violation[{"msg": msg}] {
           not is_update(input.review)

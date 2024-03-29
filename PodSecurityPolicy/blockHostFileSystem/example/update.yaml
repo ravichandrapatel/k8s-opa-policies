@@ -19,5 +19,3 @@ request:
           readOnly: true
       volumes:
       - name: cache-volume
-        hostPath:
-          path: /tmp # directory location on host

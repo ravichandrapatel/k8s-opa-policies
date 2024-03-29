@@ -1,6 +1,6 @@
 FROM alpine
 
-ARG GATOR_VERSION
+ARG GATOR_VERSION=3.15.1 
 
 # Install dependencies. libc6-compat is for CGO support.
 RUN apk --no-cache add curl tar libc6-compat
@@ -14,6 +14,6 @@ RUN tar xvf gator-v${GATOR_VERSION}-linux-amd64.tar.gz && rm gator-v${GATOR_VERS
 RUN mkdir /gatekeeper-library
 WORKDIR /gatekeeper-library
 
-COPY ../ .
+COPY .. .
 
-ENTRYPOINT ["/bin/gator"]
+#ENTRYPOINT ["/bin/gator verify ./.."] ## /bin/gator verify ./..
